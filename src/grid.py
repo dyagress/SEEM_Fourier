@@ -28,6 +28,10 @@ class Grid:
         u = np.fft.ifft2(u)
         u = np.real(u)
         return u
+
+    def vector_kernel(self, u1, u2, order=2):
+        """Smoothing kernel applied to vector field."""
+        return self.kernel(u1, order), self.kernel(u2, order)
     
     def derivative(self, u,
                    order='laplacian',
@@ -81,6 +85,21 @@ class Grid:
                                              (np.zeros(16), grid),
                                              shape=(1, self.num_pts**2))
             return sparse
+
+    def div_free_projection(self, u1, u2):
+        """Divergence free projection of vector field (u1, u2)."""
+        f = self.freq_x**2 + self.freq_y**2
+        fx = self.freq_x
+        fy = self.freq_y
+        f_u1 = np.fft.fft2(u1)
+        f_u2 = np.fft.fft2(u2)
+        a = fy*(fy*f_u1 - fx*f_u2)/f
+        a[0, 0] = u1[0, 0]
+        c = fx*(fx*f_u2 - fy*f_u1)/f
+        c[0, 0] = u2[0, 0]
+        v1 = np.real(np.fft.ifft2(a))
+        v2 = np.real(np.fft.ifft2(c))
+        return v1, v2
 
     def contour(self, w, n=50, figname='contour.pdf'):
         """Create contour plot for vector defined on regular grid."""
