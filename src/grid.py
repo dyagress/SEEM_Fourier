@@ -2,14 +2,15 @@
 
 import numpy as np
 import scipy
-from interpolate import dirac
 from matplotlib import pyplot as plt
+from src.interpolate import dirac
 
 
 class Grid:
     """Two dimensional Fourier grid with frequency data."""
 
-    def __init(self, num_pts):
+    def __init__(self, num_pts):
+        """2D grid with num_pts in each direction."""
         self.num_pts = num_pts
         self.grid_length = 2*np.pi/num_pts
         # Physical grid.
@@ -64,12 +65,13 @@ class Grid:
         if accuracy == 'spectral':
             return dirac(int(self.num_pts/2), self.grid, x.tolist()).flatten()
         elif accuracy == 'cubic':
-            x0 = (x[0]+np.pi)/2/np.pi*self.num_pts
-            x1 = (x[1]+np.pi)/2/np.pi*self.num_pts
-            x0_range = np.arange(int(x0-1), int(x0+2))
-            x1_range = np.arange(int(x1-1), int(x1+2))
-            grid = (np.outer(x0_range, np.ones(4)).flatten() +
-                    np.outer(np.ones(4), x1_range).flatten())
+            x0 = int((x[0]+np.pi)/2/np.pi*self.num_pts)
+            x1 = int((x[1]+np.pi)/2/np.pi*self.num_pts)
+            x0_range = np.arange(x0-1, x0+3)
+            x1_range = np.arange(x1-1, x1+3)
+            grid = (np.outer(x0_range,
+                             self.num_pts*np.ones(4, dtype=int)).flatten() +
+                    np.outer(np.ones(4, dtype=int), x1_range).flatten())
             x0_frac = x[0] % 1 + 1
             x1_frac = x[1] % 1 + 1
             coeff_x0 = np.array([-(x0_frac-1)*(x0_frac-2)*(x0_frac-3)/6,
@@ -81,8 +83,7 @@ class Grid:
                                  -x1_frac*(x1_frac-1)*(x1_frac-3)/2,
                                  x1_frac*(x1_frac-1)*(x1_frac-2)/6])
             coeff = np.outer(coeff_x0, coeff_x1).flatten()
-            sparse = scipy.sparse.coo_matrix(coeff,
-                                             (np.zeros(16), grid),
+            sparse = scipy.sparse.coo_matrix((coeff, (np.zeros(16), grid)),
                                              shape=(1, self.num_pts**2))
             return sparse
 
